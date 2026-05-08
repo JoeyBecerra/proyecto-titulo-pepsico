@@ -1,10 +1,11 @@
 <h1 align="center">🚚 Sistema de Gestión de Taller - PepsiCo</h1>
 
 <p align="center">
-  <img src="shields.io" alt="Flask">
-  <img src="shields.io" alt="PostgreSQL">
-  <img src="shields.io" alt="Frontend">
-  <img src="shields.io" alt="Render">
+  <img src="https://img.shields.io/badge/Flask-000000?style=for-the-badge&logo=flask&logoColor=white" alt="Flask">
+  <img src="https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL">
+  <img src="https://img.shields.io/badge/Bootstrap-7952B3?style=for-the-badge&logo=bootstrap&logoColor=white" alt="Bootstrap">
+  <img src="https://img.shields.io/badge/Render-46E3B7?style=for-the-badge&logo=render&logoColor=white" alt="Render">
+  <img src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python">
 </p>
 
 ## 📋 Problemática y Solución
@@ -87,7 +88,7 @@ Sigue estos pasos para ejecutar el proyecto en tu entorno local:
    * **Windows:**
      ```cmd
      python -m venv venv
-     venv\(\Scripts\activate\)
+     venv\Scripts\activate
      ```
 
 3. **Instalar dependencias:**
