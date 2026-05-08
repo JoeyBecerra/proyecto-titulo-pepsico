@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block title %}Subir Documento - OT {{ orden.numero_ot }} - PepsiCo Taller{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="card-title mb-0">Subir Documento - OT {{ orden.numero_ot }}</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" enctype="multipart/form-data">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="mb-3">
+                        {{ form.tipo_documento.label(class="form-label") }}
+                        {{ form.tipo_documento(class="form-select") }}
+                        {% if form.tipo_documento.errors %}
+                            <div class="text-danger">
+                                {% for error in form.tipo_documento.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.descripcion.label(class="form-label") }}
+                        {{ form.descripcion(class="form-control", rows=3, placeholder="Descripción opcional del documento...") }}
+                        {% if form.descripcion.errors %}
+                            <div class="text-danger">
+                                {% for error in form.descripcion.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.archivo.label(class="form-label") }}
+                        {{ form.archivo(class="form-control") }}
+                        {% if form.archivo.errors %}
+                            <div class="text-danger">
+                                {% for error in form.archivo.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">
+                            Formatos permitidos: PNG, JPG, JPEG, GIF, PDF, DOC, DOCX. Tamaño máximo: 16MB.
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('ver_orden_trabajo', ot_id=orden.ot_id) }}" class="btn btn-secondary me-md-2">Cancelar</a>
+                        {{ form.submit(class="btn btn-primary") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Información de la OT -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6 class="card-title mb-0">Información de la Orden de Trabajo</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <strong>Vehículo:</strong> {{ orden.vehiculo.patente }} - {{ orden.vehiculo.marca }} {{ orden.vehiculo.modelo }}
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Estado:</strong> 
+                        <span class="badge bg-{% if orden.estado_actual.value == 'Programada' %}secondary
+                        {% elif orden.estado_actual.value == 'En Reparación' %}warning
+                        {% elif orden.estado_actual.value == 'Finalizada' %}success
+                        {% else %}info{% endif %}">
+                            {{ orden.estado_actual.value }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

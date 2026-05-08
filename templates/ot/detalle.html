@@ -1,0 +1,508 @@
+{% extends "base.html" %}
+
+{% block title %}OT {{ orden.numero_ot }} - PepsiCo Taller{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Orden de Trabajo: {{ orden.numero_ot }}</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('listar_ordenes_trabajo') }}" class="btn btn-sm btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i>Volver a Órdenes
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Información General</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm">
+                    <tr>
+                        <th>Número OT:</th>
+                        <td><strong>{{ orden.numero_ot }}</strong></td>
+                    </tr>
+                    <tr>
+                        <th>Vehículo:</th>
+                        <td>{{ orden.vehiculo.patente }} - {{ orden.vehiculo.marca }} {{ orden.vehiculo.modelo }}</td>
+                    </tr>
+                    <tr>
+                        <th>Fecha Creación:</th>
+                        <td>{{ orden.fecha_creacion.strftime('%d/%m/%Y') }}</td>
+                    </tr>
+                    <tr>
+                        <th>Fecha Programada:</th>
+                        <td>{{ orden.fecha_programada.strftime('%d/%m/%Y') if orden.fecha_programada else 'No programada' }}</td>
+                    </tr>
+                    <tr>
+                        <th>Estado:</th>
+                        <td>
+                            <span class="badge 
+                                {% if orden.estado_actual.value == 'Programada' %}bg-secondary
+                                {% elif orden.estado_actual.value == 'En Reparación' %}bg-warning
+                                {% elif orden.estado_actual.value == 'Finalizada' %}bg-success
+                                {% elif orden.estado_actual.value == 'En Pausa' %}bg-danger
+                                {% else %}bg-info{% endif %}">
+                                {{ orden.estado_actual.value }}
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Prioridad:</th>
+                        <td>
+                            <span class="badge 
+                                {% if orden.prioridad.value == 'Alta' or orden.prioridad.value == 'Urgente' %}bg-danger
+                                {% elif orden.prioridad.value == 'Media' %}bg-warning
+                                {% else %}bg-success{% endif %}">
+                                {{ orden.prioridad.value }}
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Mecánico Asignado:</th>
+                        <td>
+                            {% set mecanico_asignado = orden.asignaciones | selectattr("tipo_asignacion", "equalto", "mecanico") | first %}
+                            {% if mecanico_asignado %}
+                                {{ mecanico_asignado.usuario.nombre }} {{ mecanico_asignado.usuario.apellido }}
+                            {% else %}
+                                <span class="text-muted">No asignado</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% if orden.tiempo_total %}
+                    <tr>
+                        <th>Tiempo Total:</th>
+                        <td>{{ orden.tiempo_total }} horas</td>
+                    </tr>
+                    {% endif %}
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Descripción del Problema</h5>
+            </div>
+            <div class="card-body">
+                <p>{{ orden.descripcion_problema or 'Sin descripción' }}</p>
+            </div>
+        </div>
+        
+        <!-- Observaciones -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Observaciones</h5>
+            </div>
+            <div class="card-body">
+                {% if orden.observaciones %}
+                    <div class="list-group list-group-flush">
+                        {% for obs in orden.observaciones %}
+                        <div class="list-group-item">
+                            <small class="text-muted">{{ obs.fecha.strftime('%d/%m/%Y %H:%M') }} - {{ obs.usuario.nombre }}</small>
+                            <p class="mb-1">{{ obs.comentario }}</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted">No hay observaciones registradas.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Acciones -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0">Acciones</h5>
+    </div>
+    <div class="card-body">
+        <div class="row g-2">
+            {% if tiene_rol('jefe_taller') or tiene_rol('admin') %}
+            <div class="col-auto">
+                {% if orden.estado_actual.value in ['Programada', 'Cancelada'] %}
+                <button type="button" class="btn btn-outline-danger" 
+                        data-bs-toggle="modal" 
+                        data-bs-target="#modalEliminarOT"> 
+                    <i class="fas fa-trash me-1"></i>Eliminar OT
+                </button>
+                {% else %}
+                <button type="button" class="btn btn-outline-danger" disabled
+                       title="No se puede eliminar - Estado activo">
+                     <i class="fas fa-trash me-1"></i>Eliminar OT
+                </button>
+                <small class="text-muted d-block mt-1">Solo se pueden eliminar OTs en estado "Programada" o "Cancelada"</small>
+                {% endif %}
+            </div>
+            {% endif %}
+            <!-- Asignar Mecánico -->
+            {% if tiene_rol('jefe_taller') or tiene_rol('admin') %}
+            <div class="col-auto">
+                <a href="{{ url_for('asignar_mecanico', ot_id=orden.ot_id) }}" 
+                   class="btn btn-outline-warning {% if not orden.asignaciones %}btn-warning text-white{% endif %}">
+                    <i class="fas fa-user-plus me-1"></i>
+                    {% if orden.asignaciones %}Reasignar{% else %}Asignar{% endif %} Mecánico
+                </a>
+            </div>
+            {% endif %}
+            
+            <!-- Actualizar Estado -->
+            {% if tiene_rol('mecanico') or tiene_rol('jefe_taller') or tiene_rol('admin') %}
+            <div class="col-auto">
+                <button type="button" class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#modalEstado">
+                    <i class="fas fa-sync-alt me-1"></i>Actualizar Estado
+                </button>
+            </div>
+            {% endif %}
+            
+            <!-- Registrar Pausa -->
+            {% if tiene_rol('mecanico') or tiene_rol('jefe_taller') or tiene_rol('admin') %}
+            <div class="col-auto">
+                <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#modalPausa">
+                    <i class="fas fa-pause me-1"></i>Registrar Pausa
+                </button>
+            </div>
+            {% endif %}
+            
+            <!-- Validar Reparación -->
+            {% if tiene_rol('jefe_taller') or tiene_rol('admin') %}
+            <div class="col-auto">
+                <form action="{{ url_for('validar_reparacion_ot', ot_id=orden.ot_id) }}" method="POST" class="d-inline">
+                    <button type="submit" class="btn btn-outline-success" 
+                            onclick="return confirm('¿Estás seguro de que deseas validar esta reparación?')">
+                        <i class="fas fa-check-circle me-1"></i>Validar Reparación
+                    </button>
+                </form>
+            </div>
+            {% endif %}
+            <!-- Finalizar OT -->
+            {% if tiene_rol('jefe_taller') or tiene_rol('admin') %}
+            <div class="col-auto">
+                <form action="{{ url_for('finalizar_ot', ot_id=orden.ot_id) }}" method="POST" class="d-inline">
+                    <button type="submit" class="btn btn-outline-primary" 
+                            onclick="return confirm('¿Estás seguro de que deseas finalizar esta orden de trabajo?')"
+                            {% if orden.estado_actual.value != 'Validada' %}disabled{% endif %}>
+                        <i class="fas fa-flag-checkered me-1"></i>Finalizar OT
+                    </button>
+                </form>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Actualizar Estado -->
+<div class="modal fade" id="modalEstado" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Actualizar Estado - OT {{ orden.numero_ot }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('actualizar_estado_ot', ot_id=orden.ot_id) }}" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="nuevo_estado" class="form-label">Seleccionar Nuevo Estado:</label>
+                        <select class="form-select" id="nuevo_estado" name="nuevo_estado" required>
+                            <option value="">Seleccione un estado...</option>
+                            {% if orden.estado_actual.value in ['Programada', 'Cancelada'] %}
+                            <option value="EN_RECEPCION">En Recepción</option>
+                            {% endif %}
+                            
+                            {% if orden.estado_actual.value == 'En Recepción' %}
+                            <option value="EN_REVISION">En Revisión</option>
+                            {% endif %}
+                            
+                            {% if orden.estado_actual.value == 'En Revisión' %}
+                            <option value="EN_REPARACION">En Reparación</option>
+                            {% endif %}
+                            
+                            {% if orden.estado_actual.value == 'En Reparación' %}
+                            <option value="EN_PAUSA">En Pausa</option>
+                            <option value="POR_VALIDAR">Por Validar</option>
+                            {% endif %}
+                            
+                            {% if orden.estado_actual.value == 'En Pausa' %}
+                            <option value="EN_REPARACION">En Reparación</option>
+                            {% endif %}
+                            
+                            {% if orden.estado_actual.value == 'Por Validar' %}
+                            <option value="VALIDADA">Validada</option>
+                            <option value="EN_REPARACION">En Reparación</option>
+                            {% endif %}
+                            
+                            {% if orden.estado_actual.value == 'Validada' %}
+                            <option value="FINALIZADA">Finalizada</option>
+                            {% endif %}
+                            
+                            {% if orden.estado_actual.value not in ['Finalizada', 'Cancelada'] %}
+                            <option value="CANCELADA">Cancelada</option>
+                            {% endif %}
+                            
+                            {% if orden.estado_actual.value == 'Cancelada' %}
+                            <option value="PROGRAMADA">Programada</option>
+                            {% endif %}
+                        </select>
+                        <div class="form-text">
+                            Estado actual: <strong>{{ orden.estado_actual.value }}</strong>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Actualizar Estado</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Registrar Pausa -->
+<div class="modal fade" id="modalPausa" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Registrar Pausa - OT {{ orden.numero_ot }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('registrar_pausa_ot', ot_id=orden.ot_id) }}" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="motivo" class="form-label">Motivo de la Pausa:</label>
+                        <select class="form-select" id="motivo" name="motivo" required>
+                            <option value="">Seleccione un motivo...</option>
+                            <option value="Espera de repuestos">Espera de repuestos</option>
+                            <option value="Problema técnico">Problema técnico</option>
+                            <option value="Falta de información">Falta de información</option>
+                            <option value="Reunión o capacitación">Reunión o capacitación</option>
+                            <option value="Otro">Otro</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="observaciones_adicionales" class="form-label">Observaciones Adicionales:</label>
+                        <textarea class="form-control" id="observaciones_adicionales" name="observaciones_adicionales" rows="3" placeholder="Detalles adicionales de la pausa..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-warning">Registrar Pausa</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<!-- Modal para Eliminar OT -->
+<div class="modal fade" id="modalEliminarOT" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmar Eliminación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Estás seguro de que deseas eliminar la orden de trabajo <strong>{{ orden.numero_ot }}</strong>?</p>
+                <p class="text-danger"><small>Esta acción no se puede deshacer.</small></p>
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>Vehículo:</strong> {{ orden.vehiculo.patente }} - {{ orden.vehiculo.marca }} {{ orden.vehiculo.modelo }}<br>
+                    <strong>Estado actual:</strong> {{ orden.estado_actual.value }}
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form action="{{ url_for('eliminar_orden_trabajo', ot_id=orden.ot_id) }}" method="POST">
+                    <button type="submit" class="btn btn-danger">Eliminar OT</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Sección de Repuestos Utilizados -->
+<div class="card mt-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="card-title mb-0">Repuestos Utilizados</h5>
+        {% if (tiene_rol('mecanico') or tiene_rol('jefe_taller') or tiene_rol('admin')) and orden.estado_actual.value in ['En Reparación', 'En Pausa', 'Por Validar'] %}
+        <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#agregarRepuestoModal">
+            <i class="fas fa-plus me-1"></i> Agregar Repuesto
+        </button>
+        {% endif %}
+    </div>
+    <div class="card-body">
+        {% if orden.repuestos %}
+        <div class="table-responsive">
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>Repuesto</th>
+                        <th>Código</th>
+                        <th>Cantidad</th>
+                        <th>Precio Unitario</th>
+                        <th>Subtotal</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ot_repuesto in orden.repuestos %}
+                    <tr>
+                        <td>{{ ot_repuesto.repuesto.nombre }}</td>
+                        <td>{{ ot_repuesto.repuesto.codigo_repuesto }}</td>
+                        <td>{{ ot_repuesto.cantidad_utilizada }}</td>
+                        <td>${{ "{:,.0f}".format(ot_repuesto.precio_actual) }}</td>
+                        <td>${{ "{:,.0f}".format(ot_repuesto.cantidad_utilizada * ot_repuesto.precio_actual) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr class="table-active">
+                        <td colspan="4" class="text-end"><strong>Total Repuestos:</strong></td>
+                        <td><strong>${{ "{:,.0f}".format(orden.repuestos | sum(attribute='precio_actual') * orden.repuestos | sum(attribute='cantidad_utilizada')) }}</strong></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-muted">No se han registrado repuestos para esta orden de trabajo.</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal para Agregar Repuesto -->
+{% if (tiene_rol('mecanico') or tiene_rol('jefe_taller') or tiene_rol('admin')) and orden.estado_actual.value in ['En Reparación', 'En Pausa', 'Por Validar'] %}
+<div class="modal fade" id="agregarRepuestoModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Agregar Repuesto a OT</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('agregar_repuesto_ot', ot_id=orden.ot_id) }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="repuesto_id" class="form-label">Repuesto</label>
+                        <select name="repuesto_id" class="form-select" required>
+                            <option value="">Seleccionar Repuesto</option>
+                            {% for repuesto in repuestos_disponibles %}
+                            <option value="{{ repuesto.repuesto_id }}">
+                                {{ repuesto.nombre }} ({{ repuesto.codigo_repuesto }}) - Stock: {{ repuesto.stock_actual }} - ${{ "{:,.0f}".format(repuesto.precio_unitario) }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="cantidad" class="form-label">Cantidad</label>
+                        <input type="number" name="cantidad" class="form-control" value="1" min="1" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Agregar Repuesto</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- =============================================== -->
+<!-- SECCIÓN DE DOCUMENTOS - INDEPENDIENTE -->
+<!-- =============================================== -->
+
+<div class="card mt-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="card-title mb-0">
+            <i class="fas fa-file-alt me-2"></i>Documentos y Evidencias
+            {% if orden.documentos %}
+            <span class="badge bg-primary">{{ orden.documentos|length }}</span>
+            {% endif %}
+        </h5>
+        <div>
+            <a href="{{ url_for('ver_documentos_ot', ot_id=orden.ot_id) }}" class="btn btn-sm btn-outline-info me-2">
+                <i class="fas fa-folder-open me-1"></i> Ver Todos
+            </a>
+            {% if orden.estado_actual.value in ['En Recepción', 'En Revisión', 'En Reparación', 'En Pausa', 'Por Validar'] %}
+            <a href="{{ url_for('subir_documento_ot', ot_id=orden.ot_id) }}" class="btn btn-sm btn-outline-primary">
+                <i class="fas fa-upload me-1"></i> Subir Documento
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    <div class="card-body">
+        {% if orden.documentos %}
+        <div class="row">
+            {% for ot_doc in orden.documentos %}
+            <div class="col-md-4 mb-3">
+                <div class="card h-100 border">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <span class="badge 
+                                {% if ot_doc.documento.tipo_documento.value == 'Foto de Ingreso' %}bg-primary
+                                {% elif ot_doc.documento.tipo_documento.value == 'Foto de Reparación' %}bg-success
+                                {% elif ot_doc.documento.tipo_documento.value == 'Informe de Siniestro' %}bg-danger
+                                {% else %}bg-secondary{% endif %}">
+                                {{ ot_doc.documento.tipo_documento.value }}
+                            </span>
+                            <small class="text-muted">{{ ot_doc.documento.fecha_subida.strftime('%d/%m/%Y') }}</small>
+                        </div>
+                        <h6 class="card-title text-truncate" title="{{ ot_doc.documento.nombre_archivo }}">
+                            {{ ot_doc.documento.nombre_archivo }}
+                        </h6>
+                        <p class="card-text">
+                            <small class="text-muted">
+                                <i class="fas fa-user me-1"></i>{{ ot_doc.documento.subido_por.nombre }}<br>
+                                <i class="fas fa-weight me-1"></i>{{ (ot_doc.documento.tamaño / 1024) | round(2) }} KB
+                            </small>
+                        </p>
+                        <div class="btn-group w-100">
+                            <a href="{{ url_for('descargar_documento', doc_id=ot_doc.documento.doc_id) }}" 
+                               class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-download me-1"></i> Descargar
+                            </a>
+                            {% if tiene_rol('jefe_taller') or tiene_rol('admin') %}
+                            <form method="POST" 
+                                  action="{{ url_for('eliminar_documento', doc_id=ot_doc.documento.doc_id) }}" 
+                                  class="d-inline"
+                                  onsubmit="return confirm('¿Eliminar este documento?');">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-4">
+            <i class="fas fa-folder-open fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">No hay documentos asociados</h5>
+            <p class="text-muted">Sube el primer documento para esta orden de trabajo.</p>
+            {% if orden.estado_actual.value in ['En Recepción', 'En Revisión', 'En Reparación', 'En Pausa', 'Por Validar'] %}
+            <a href="{{ url_for('subir_documento_ot', ot_id=orden.ot_id) }}" class="btn btn-primary">
+                <i class="fas fa-upload me-1"></i> Subir Primer Documento
+            </a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Botón de Cancelar OT -->
+<div class="mt-4">
+    {% if tiene_rol('jefe_taller') or tiene_rol('admin') %}
+        {% if orden.estado_actual.value not in ['Finalizada', 'Validada', 'Cancelada'] %}
+        <form action="{{ url_for('cancelar_orden_trabajo', ot_id=orden.ot_id) }}" method="POST" class="d-inline">
+            <button type="submit" class="btn btn-outline-warning" 
+                    onclick="return confirm('¿Estás seguro de que deseas cancelar esta orden de trabajo?')">
+                <i class="fas fa-times-circle me-1"></i>Cancelar OT
+            </button>
+        </form>
+        {% endif %}
+    {% endif %}
+</div>
+
+{% endblock %}

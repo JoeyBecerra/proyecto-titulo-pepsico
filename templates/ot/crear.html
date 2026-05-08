@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block title %}Crear Orden de Trabajo - PepsiCo Taller{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Crear Orden de Trabajo</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('listar_ordenes_trabajo') }}" class="btn btn-sm btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i>Volver a Órdenes
+        </a>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Información de la Orden de Trabajo</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('crear_orden_trabajo') }}">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="mb-3">
+                        {{ form.vehiculo_id.label(class="form-label") }}
+                        {% if form.vehiculo_id.choices %}
+                            {{ form.vehiculo_id(class="form-select") }}
+                        {% else %}
+                            <select class="form-select" disabled>
+                                <option>No hay vehículos disponibles</option>
+                            </select>
+                            <small class="text-muted">No hay vehículos operativos para asignar</small>
+                        {% endif %}
+                        {% if form.vehiculo_id.errors %}
+                            <div class="text-danger">
+                                {% for error in form.vehiculo_id.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.fecha_programada.label(class="form-label") }}
+                        {{ form.fecha_programada(class="form-control", type="date") }}
+                        {% if form.fecha_programada.errors %}
+                            <div class="text-danger">
+                                {% for error in form.fecha_programada.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.prioridad.label(class="form-label") }}
+                        {{ form.prioridad(class="form-select") }}
+                        {% if form.prioridad.errors %}
+                            <div class="text-danger">
+                                {% for error in form.prioridad.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.descripcion_problema.label(class="form-label") }}
+                        {{ form.descripcion_problema(class="form-control", rows="4", placeholder="Describa el problema o mantenimiento requerido...") }}
+                        {% if form.descripcion_problema.errors %}
+                            <div class="text-danger">
+                                {% for error in form.descripcion_problema.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('listar_ordenes_trabajo') }}" class="btn btn-secondary me-md-2">Cancelar</a>
+                        {{ form.submit(class="btn btn-primary") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        {% if not form.vehiculo_id.choices %}
+        <div class="alert alert-warning mt-3">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            <strong>No hay vehículos disponibles</strong>. Para crear una orden de trabajo, primero debe registrar vehículos en estado "OPERATIVO".
+            <div class="mt-2">
+                <a href="{{ url_for('registrar_vehiculo') }}" class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-plus me-1"></i>Registrar Vehículo
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

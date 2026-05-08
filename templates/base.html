@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}PepsiCo - Gestión de Taller{% endblock %}</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <nav class="col-md-3 col-lg-2 d-md-block bg-dark sidebar collapse" style="min-height: 100vh;">
+                <div class="position-sticky pt-3">
+                    <div class="text-center mb-4">
+                        <h4 class="text-white">PepsiCo Taller</h4>
+                        <small class="text-muted">Gestión Vehicular</small>
+                    </div>
+
+                    <!-- MENÚ PRINCIPAL - TODOS LOS ELEMENTOS DENTRO DE UN ÚNICO UL -->
+                    <ul class="nav flex-column">
+                        <!-- Dashboard -->
+                        <li class="nav-item">
+                            <a class="nav-link text-white {% if request.endpoint == 'dashboard' %}active bg-primary{% endif %}" 
+                               href="{{ url_for('dashboard') }}">
+                                <i class="fas fa-tachometer-alt me-2"></i>
+                                Dashboard
+                            </a>
+                        </li>
+                        <!-- Agenda -->
+                        {% if tiene_rol('recepcionista') or tiene_rol('jefe_taller') or tiene_rol('admin') %}
+                        <li class="nav-item">
+                            <a class="nav-link text-white {% if 'agenda' in request.endpoint %}active bg-primary{% endif %}" 
+                            href="{{ url_for('ver_agenda') }}">
+                                <i class="fas fa-calendar-alt me-2"></i>
+                                Agenda
+                            </a>
+                        </li>
+                        {% endif %}
+                        <!-- Vehículos -->
+                        {% if current_user.is_authenticated and (tiene_rol('recepcionista') or tiene_rol('jefe_taller') or tiene_rol('admin')) %}
+                        <li class="nav-item">
+                            <a class="nav-link text-white {% if 'vehiculos' in request.endpoint %}active bg-primary{% endif %}" 
+                               href="{{ url_for('listar_vehiculos') }}">
+                                <i class="fas fa-truck me-2"></i>
+                                Vehículos
+                            </a>
+                        </li>
+                        {% endif %}
+                        <!-- Órdenes de Trabajo -->
+                        {% if current_user.is_authenticated %}
+                        <li class="nav-item">
+                            <a class="nav-link text-white {% if 'ordenes-trabajo' in request.endpoint %}active bg-primary{% endif %}" 
+                               href="{{ url_for('listar_ordenes_trabajo') }}">
+                                <i class="fas fa-clipboard-list me-2"></i>
+                                Órdenes de Trabajo
+                            </a>
+                        </li>
+                        {% endif %}
+                        <!-- Repuestos -->
+                        {% if current_user.is_authenticated and (tiene_rol('asistente_repuestos') or tiene_rol('jefe_taller') or tiene_rol('admin') or tiene_rol('mecanico')) %}
+                        <li class="nav-item">
+                            <a class="nav-link text-white {% if 'repuestos' in request.endpoint %}active bg-primary{% endif %}" 
+                               href="{{ url_for('listar_repuestos') }}">
+                                <i class="fas fa-boxes me-2"></i>
+                                Repuestos
+                            </a>
+                        </li>
+                        {% endif %}
+                        <!-- Proveedores -->
+                        {% if current_user.is_authenticated and (tiene_rol('asistente_repuestos') or tiene_rol('jefe_taller') or tiene_rol('admin')) %}
+                        <li class="nav-item">
+                            <a class="nav-link text-white {% if 'proveedores' in request.endpoint %}active bg-primary{% endif %}" 
+                               href="{{ url_for('listar_proveedores') }}">
+                                <i class="fas fa-truck-loading me-2"></i>
+                                Proveedores
+                            </a>
+                        </li>
+                        {% endif %}
+                        <!-- Reportes -->
+                        {% if current_user.is_authenticated and (tiene_rol('jefe_taller') or tiene_rol('coordinador') or tiene_rol('admin') or tiene_rol('supervisor')) %}
+                        <li class="nav-item">
+                            <a class="nav-link text-white {% if 'reportes' in request.endpoint %}active bg-primary{% endif %}" 
+                               href="{{ url_for('reportes') }}">
+                                <i class="fas fa-chart-bar me-2"></i>
+                                Reportes
+                            </a>
+                        </li>
+                        {% endif %}
+                        <!-- Gestión de Usuarios (Solo Admin) -->
+                        {% if current_user.is_authenticated and tiene_rol('admin') %}
+                        <li class="nav-item">
+                            <a class="nav-link text-white {% if 'admin/usuarios' in request.endpoint %}active bg-primary{% endif %}" 
+                               href="{{ url_for('listar_usuarios') }}">
+                                <i class="fas fa-users-cog me-2"></i>
+                                Gestión de Usuarios
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                    <!-- Información del Usuario -->
+                    {% if current_user.is_authenticated %}
+                    <div class="mt-4 p-3 border-top border-secondary">
+                        <small class="text-muted">Sesión activa como:</small>
+                        <p class="text-white mb-1">{{ current_user.nombre }} {{ current_user.apellido }}</p>
+                        <small class="text-muted">
+                            {% for usuario_rol in current_user.roles %}
+                                {{ usuario_rol.rol.descripcion }}{% if not loop.last %}, {% endif %}
+                            {% endfor %}
+                        </small>
+                        <div class="mt-2">
+                            <small class="text-muted" id="current-time"></small>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </nav>
+            <!-- Main content -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 main-content">
+                <!-- Navbar Superior MEJORADO -->
+                <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm">
+                    <div class="container-fluid">
+                        <!-- Botón hamburguesa MEJORADO -->
+                        <button class="navbar-toggler me-2" type="button" 
+                                id="sidebarToggle"
+                                aria-label="Toggle sidebar">
+                            <span class="navbar-toggler-icon"></span>
+                        </button>
+                        
+                        <!-- Logo/Brand -->
+                        <a class="navbar-brand d-none d-md-block" href="{{ url_for('dashboard') }}">
+                            <strong>PepsiCo Taller</strong>
+                        </a>
+                        
+                        <div class="d-flex align-items-center ms-auto">
+                            <!-- Notificaciones -->
+                            {% if current_user.is_authenticated %}
+                            <div class="nav-item dropdown me-3">
+                                <a class="nav-link position-relative" href="#" id="notificacionesDropdown" 
+                                role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="fas fa-bell fs-5"></i>
+                                    <span id="notificacion-counter" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="display: none;">
+                                        0
+                                    </span>
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="notificacionesDropdown">
+                                    <li><h6 class="dropdown-header">Notificaciones</h6></li>
+                                    <li id="notificaciones-list">
+                                        <div class="text-center p-3">
+                                            <div class="spinner-border spinner-border-sm" role="status"></div>
+                                            <span class="ms-2">Cargando...</span>
+                                        </div>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <a class="dropdown-item text-center" href="{{ url_for('listar_notificaciones') }}">
+                                            <i class="fas fa-list me-1"></i> Ver todas
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                            {% endif %}
+
+                            <!-- Menú Usuario -->
+                            {% if current_user.is_authenticated %}
+                            <div class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" 
+                                id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="fas fa-user-circle me-2 fs-5"></i>
+                                    <span class="d-none d-sm-inline">{{ current_user.nombre }}</span>
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li><a class="dropdown-item" href="#">
+                                        <i class="fas fa-user me-2"></i>Mi Perfil
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="#">
+                                        <i class="fas fa-cog me-2"></i>Configuración
+                                    </a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('logout') }}">
+                                        <i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión
+                                    </a></li>
+                                </ul>
+                            </div>
+                            {% else %}
+                            <a class="nav-link" href="{{ url_for('login') }}">
+                                <i class="fas fa-sign-in-alt me-1"></i>Iniciar Sesión
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </nav>
+
+                <!-- Flash Messages -->
+                <div class="container-fluid mt-3">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm" role="alert">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas 
+                                            {% if category == 'success' %}fa-check-circle
+                                            {% elif category == 'danger' %}fa-exclamation-circle
+                                            {% elif category == 'warning' %}fa-exclamation-triangle
+                                            {% else %}fa-info-circle{% endif %}
+                                            me-2"></i>
+                                        <span>{{ message }}</span>
+                                    </div>
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+                </div>
+
+                <!-- Page Content -->
+                <div class="container-fluid py-4">
+                    {% block content %}{% endblock %}
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Custom JS -->
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    
+    <script>
+        // Actualizar hora actual
+        function updateTime() {
+            const now = new Date();
+            const options = { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            };
+            document.getElementById('current-time').textContent = 
+                now.toLocaleDateString('es-ES', options);
+        }
+        updateTime();
+        setInterval(updateTime, 60000);
+    </script>
+    
+    <script>
+    // Sistema de notificaciones en tiempo real
+    function actualizarContadorNotificaciones() {
+        fetch('/notificaciones/contador')
+            .then(response => response.json())
+            .then(data => {
+                const counter = document.getElementById('notificacion-counter');
+                if (data.count > 0) {
+                    counter.textContent = data.count > 99 ? '99+' : data.count;
+                    counter.style.display = 'block';
+                } else {
+                    counter.style.display = 'none';
+                }
+            })
+            .catch(error => console.error('Error al cargar contador:', error));
+    }
+
+    function cargarNotificacionesRecientes() {
+        fetch('/notificaciones')
+            .then(response => response.text())
+            .then(html => {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const notificacionesItems = doc.querySelectorAll('.list-group-item');
+                
+                const notificacionesList = document.getElementById('notificaciones-list');
+                
+                if (notificacionesItems.length > 0) {
+                    let htmlContent = '';
+                    // Tomar solo las primeras 5 notificaciones
+                    Array.from(notificacionesItems).slice(0, 5).forEach(item => {
+                        htmlContent += item.outerHTML;
+                    });
+                    notificacionesList.innerHTML = htmlContent;
+                } else {
+                    notificacionesList.innerHTML = 
+                        '<div class="text-center p-3 text-muted">No hay notificaciones</div>';
+                }
+            })
+            .catch(error => {
+                console.error('Error al cargar notificaciones:', error);
+                document.getElementById('notificaciones-list').innerHTML = 
+                    '<div class="text-center p-3 text-danger">Error al cargar notificaciones</div>';
+            });
+    }
+
+    // Inicializar cuando la página cargue
+    document.addEventListener('DOMContentLoaded', function() {
+        // Cargar inicialmente
+        actualizarContadorNotificaciones();
+        cargarNotificacionesRecientes();
+        
+        // Actualizar cada 30 segundos
+        setInterval(actualizarContadorNotificaciones, 30000);
+        setInterval(cargarNotificacionesRecientes, 30000);
+        
+        // Actualizar cuando se hace clic en la campanita
+        document.getElementById('notificacionesDropdown').addEventListener('click', function() {
+            cargarNotificacionesRecientes();
+        });
+    });
+    </script>
+    <!-- En la sección de scripts, antes de cerrar </body> -->
+    <script>
+    // Fix para el sidebar en móviles
+    document.addEventListener('DOMContentLoaded', function() {
+        const sidebarToggler = document.querySelector('.navbar-toggler');
+        const sidebar = document.querySelector('.sidebar');
+        
+        if (sidebarToggler && sidebar) {
+            sidebarToggler.addEventListener('click', function() {
+                sidebar.classList.toggle('show');
+                
+                // Agregar overlay cuando el sidebar está abierto
+                if (sidebar.classList.contains('show')) {
+                    // Crear overlay si no existe
+                    let overlay = document.querySelector('.sidebar-overlay');
+                    if (!overlay) {
+                        overlay = document.createElement('div');
+                        overlay.className = 'sidebar-overlay';
+                        overlay.style.cssText = `
+                            position: fixed;
+                            top: 0;
+                            left: 0;
+                            width: 100%;
+                            height: 100%;
+                            background: rgba(0,0,0,0.5);
+                            z-index: 1040;
+                            display: none;
+                        `;
+                        overlay.addEventListener('click', function() {
+                            sidebar.classList.remove('show');
+                            overlay.style.display = 'none';
+                        });
+                        document.body.appendChild(overlay);
+                    }
+                    overlay.style.display = 'block';
+                } else {
+                    // Ocultar overlay
+                    const overlay = document.querySelector('.sidebar-overlay');
+                    if (overlay) {
+                        overlay.style.display = 'none';
+                    }
+                }
+            });
+        }
+    });
+    </script>
+
+    <style>
+    /* Estilos responsivos mejorados */
+    @media (max-width: 768px) {
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: -100%;
+            width: 280px;
+            height: 100vh;
+            z-index: 1050;
+            transition: left 0.3s ease;
+            overflow-y: auto;
+        }
+        
+        .sidebar.show {
+            left: 0;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.3);
+        }
+        
+        .main-content {
+            margin-left: 0 !important;
+        }
+        
+        /* Asegurar que el contenido principal no se desplace */
+        body.sidebar-open {
+            overflow: hidden;
+        }
+}
+</style>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

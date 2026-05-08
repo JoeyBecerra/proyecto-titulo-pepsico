@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+
+{% block title %}Agenda del Taller{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header de la Agenda -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="fas fa-calendar-alt"></i> Agenda del Taller</h1>
+        <div>
+            <a href="{{ url_for('crear_bloque_agenda') }}" class="btn btn-success">
+                <i class="fas fa-plus"></i> Nuevo Bloque
+            </a>
+            <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Volver al Dashboard
+            </a>
+            {% if tiene_rol('admin') %}
+            <a href="{{ url_for('limpiar_bloques_huerfanos') }}" class="btn btn-warning">
+                <i class="fas fa-broom"></i> Limpiar Huérfanos
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Navegación de Fechas -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-4">
+                    <a href="{{ url_for('ver_agenda', fecha=fecha_anterior) }}" 
+                       class="btn btn-outline-primary">
+                        <i class="fas fa-chevron-left"></i> {{ fecha_anterior.strftime('%d/%m/%Y') }}
+                    </a>
+                </div>
+                <div class="col-md-4 text-center">
+                    <h3 class="mb-0 text-primary">{{ fecha.strftime('%A, %d de %B de %Y').capitalize() }}</h3>
+                    <small class="text-muted">{{ fecha.strftime('%d/%m/%Y') }}</small>
+                </div>
+                <div class="col-md-4 text-end">
+                    <a href="{{ url_for('ver_agenda', fecha=fecha_siguiente) }}" 
+                       class="btn btn-outline-primary">
+                        {{ fecha_siguiente.strftime('%d/%m/%Y') }} <i class="fas fa-chevron-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas Rápidas -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card text-white bg-primary">
+                <div class="card-body">
+                    <h4 class="card-title">{{ total_bloques }}</h4>
+                    <p class="card-text">Total Bloques</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-white bg-success">
+                <div class="card-body">
+                    <h4 class="card-title">{{ bloques_disponibles }}</h4>
+                    <p class="card-text">Disponibles</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-white bg-warning">
+                <div class="card-body">
+                    <h4 class="card-title">{{ bloques_ocupados }}</h4>
+                    <p class="card-text">Ocupados</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de Bloques de Agenda -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-clock"></i> Bloques de Tiempo - {{ fecha.strftime('%d/%m/%Y') }}
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if agenda %}
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Horario</th>
+                            <th>Duración</th>
+                            <th>Estado</th>
+                            <th>OT Asignada</th>
+                            <th>Comentario</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for bloque in agenda %}
+                        <tr>
+                            <td>
+                                <strong>{{ bloque.hora_inicio.strftime('%H:%M') }} - {{ bloque.hora_fin.strftime('%H:%M') }}</strong>
+                            </td>
+                            <td>
+                                {% set duracion = ((bloque.hora_fin.hour * 60 + bloque.hora_fin.minute) - (bloque.hora_inicio.hour * 60 + bloque.hora_inicio.minute)) %}
+                                {{ duracion }} minutos
+                            </td>
+                            <td>
+                                {% if bloque.disponible %}
+                                    <span class="badge bg-success">Disponible</span>
+                                {% else %}
+                                    <span class="badge bg-warning">Ocupado</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if bloque.orden_trabajo %}
+                                    <a href="{{ url_for('ver_orden_trabajo', ot_id=bloque.orden_trabajo.ot_id) }}" 
+                                       class="badge bg-primary text-decoration-none">
+                                        {{ bloque.orden_trabajo.numero_ot }}
+                                    </a>
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if bloque.comentario %}
+                                    <small>{{ bloque.comentario }}</small>
+                                {% else %}
+                                    <span class="text-muted">Sin comentario</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    {% if bloque.disponible %}
+                                    <a href="{{ url_for('asignar_ot_agenda', agenda_id=bloque.agenda_id) }}" 
+                                    class="btn btn-outline-success" title="Asignar OT">
+                                        <i class="fas fa-link"></i>
+                                    </a>
+                                    {% endif %}
+                                    
+                                    {% if bloque.disponible %}
+                                    <a href="{{ url_for('editar_bloque_agenda', agenda_id=bloque.agenda_id) }}" 
+                                    class="btn btn-outline-primary" title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    {% endif %}
+                                    
+                                    {% if bloque.disponible and (tiene_rol('jefe_taller') or tiene_rol('admin')) %}
+                                    <form method="POST" 
+                                        action="{{ url_for('eliminar_bloque_agenda', agenda_id=bloque.agenda_id) }}" 
+                                        class="d-inline">
+                                        <button type="submit" class="btn btn-outline-danger" 
+                                                onclick="return confirm('¿Estás seguro de eliminar este bloque?')"
+                                                title="Eliminar">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-4">
+                <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                <h4>No hay bloques programados para esta fecha</h4>
+                <p class="text-muted">Crea nuevos bloques de tiempo para programar ingresos de vehículos.</p>
+                <a href="{{ url_for('crear_bloque_agenda') }}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Crear Primer Bloque
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

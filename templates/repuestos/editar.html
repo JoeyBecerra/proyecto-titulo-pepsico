@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Repuesto - PepsiCo Taller{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="card-title mb-0">Editar Repuesto: {{ repuesto.nombre }}</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ form.codigo_repuesto.label(class="form-label") }}
+                            {{ form.codigo_repuesto(class="form-control") }}
+                            {% if form.codigo_repuesto.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.codigo_repuesto.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            {{ form.nombre.label(class="form-label") }}
+                            {{ form.nombre(class="form-control") }}
+                            {% if form.nombre.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.nombre.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.descripcion.label(class="form-label") }}
+                        {{ form.descripcion(class="form-control", rows=3) }}
+                        {% if form.descripcion.errors %}
+                            <div class="text-danger">
+                                {% for error in form.descripcion.errors %}
+                                    <small>{{ error }}</small>
+                                    {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            {{ form.stock_actual.label(class="form-label") }}
+                            {{ form.stock_actual(class="form-control", type="number") }}
+                            {% if form.stock_actual.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.stock_actual.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            {{ form.stock_minimo.label(class="form-label") }}
+                            {{ form.stock_minimo(class="form-control", type="number") }}
+                            {% if form.stock_minimo.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.stock_minimo.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            {{ form.precio_unitario.label(class="form-label") }}
+                            {{ form.precio_unitario(class="form-control", placeholder="Ej: 15000") }}
+                            {% if form.precio_unitario.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.precio_unitario.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.proveedor_id.label(class="form-label") }}
+                        {{ form.proveedor_id(class="form-select", required=true) }}
+                        {% if form.proveedor_id.errors %}
+                            <div class="text-danger">
+                                {% for error in form.proveedor_id.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('listar_repuestos') }}" class="btn btn-secondary me-md-2">Cancelar</a>
+                        {{ form.submit(class="btn btn-primary") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

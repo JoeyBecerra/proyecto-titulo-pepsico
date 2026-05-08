@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Vehículo - PepsiCo Taller{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Editar Vehículo: {{ vehiculo.patente }}</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('listar_vehiculos') }}" class="btn btn-sm btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i>Volver a Vehículos
+        </a>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Información del Vehículo</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('editar_vehiculo', vehiculo_id=vehiculo.vehiculo_id) }}">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ form.patente.label(class="form-label") }}
+                            {{ form.patente(class="form-control", placeholder="Ej: AB123CD") }}
+                            {% if form.patente.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.patente.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            {{ form.marca.label(class="form-label") }}
+                            {{ form.marca(class="form-control", placeholder="Ej: Mercedes-Benz") }}
+                            {% if form.marca.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.marca.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ form.modelo.label(class="form-label") }}
+                            {{ form.modelo(class="form-control", placeholder="Ej: Actros") }}
+                            {% if form.modelo.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.modelo.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            {{ form.anio.label(class="form-label") }}
+                            {{ form.anio(class="form-control", placeholder="Ej: 2022") }}
+                            {% if form.anio.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.anio.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.kilometraje.label(class="form-label") }}
+                        {{ form.kilometraje(class="form-control", placeholder="Ej: 150000") }}
+                        {% if form.kilometraje.errors %}
+                            <div class="text-danger">
+                                {% for error in form.kilometraje.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('listar_vehiculos') }}" class="btn btn-secondary me-md-2">Cancelar</a>
+                        {{ form.submit(class="btn btn-primary") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

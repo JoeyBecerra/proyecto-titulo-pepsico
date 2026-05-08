@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}Crear Bloque de Agenda{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="card-title mb-0">
+                        <i class="fas fa-plus-circle"></i> Crear Nuevo Bloque de Agenda
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.fecha.label(class="form-label") }}
+                                {{ form.fecha(class="form-control") }}
+                                {% if form.fecha.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.fecha.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.hora_inicio.label(class="form-label") }}
+                                {{ form.hora_inicio(class="form-select") }}
+                                {% if form.hora_inicio.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.hora_inicio.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                {{ form.hora_fin.label(class="form-label") }}
+                                {{ form.hora_fin(class="form-select") }}
+                                {% if form.hora_fin.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.hora_fin.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.comentario.label(class="form-label") }}
+                            {{ form.comentario(class="form-control", rows="3", placeholder="Comentario opcional sobre este bloque de tiempo...") }}
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('ver_agenda') }}" class="btn btn-secondary me-md-2">
+                                <i class="fas fa-times"></i> Cancelar
+                            </a>
+                            {{ form.submit(class="btn btn-primary") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

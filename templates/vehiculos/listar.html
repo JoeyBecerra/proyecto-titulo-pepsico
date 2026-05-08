@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block title %}Vehículos - PepsiCo Taller{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Gestión de Vehículos</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('registrar_vehiculo') }}" class="btn btn-sm btn-outline-primary">
+            <i class="fas fa-plus me-1"></i>Registrar Vehículo
+        </a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        {% if vehiculos %}
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th>Patente</th>
+                        <th>Marca</th>
+                        <th>Modelo</th>
+                        <th>Año</th>
+                        <th>Kilometraje</th>
+                        <th>Estado</th>
+                        <th>Última Revisión</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for vehiculo in vehiculos %}
+                    <tr>
+                        <td><strong>{{ vehiculo.patente }}</strong></td>
+                        <td>{{ vehiculo.marca }}</td>
+                        <td>{{ vehiculo.modelo }}</td>
+                        <td>{{ vehiculo.anio }}</td>
+                        <td>{{ "{:,}".format(vehiculo.kilometraje).replace(",", ".") }} km</td>
+                        <td>
+                            <span class="badge 
+                                {% if vehiculo.estado == 'OPERATIVO' %}bg-success
+                                {% elif vehiculo.estado == 'EN_TALLER' %}bg-warning
+                                {% else %}bg-danger{% endif %}">
+                                {{ vehiculo.estado }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if vehiculo.fecha_ultima_revision %}
+                                {{ vehiculo.fecha_ultima_revision.strftime('%d/%m/%Y') }}
+                            {% else %}
+                                <span class="text-muted">Nunca</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <a href="{{ url_for('ver_vehiculo', vehiculo_id=vehiculo.vehiculo_id) }}" 
+                                   class="btn btn-outline-info" title="Ver detalles">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                {% if tiene_rol('recepcionista') or tiene_rol('jefe_taller') or tiene_rol('admin') %}
+                                <a href="{{ url_for('editar_vehiculo', vehiculo_id=vehiculo.vehiculo_id) }}" 
+                                   class="btn btn-outline-warning" title="Editar">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                {% endif %}
+                                {% if tiene_rol('jefe_taller') or tiene_rol('admin') %}
+                                <button type="button" class="btn btn-outline-danger" 
+                                        title="Eliminar"
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#modalEliminar{{ vehiculo.vehiculo_id }}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                                {% endif %}
+                            </div>
+
+                            <!-- Modal de Confirmación de Eliminación -->
+                            <div class="modal fade" id="modalEliminar{{ vehiculo.vehiculo_id }}" tabindex="-1">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">Confirmar Eliminación</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <p>¿Estás seguro de que deseas eliminar el vehículo <strong>{{ vehiculo.patente }}</strong>?</p>
+                                            <p class="text-danger"><small>Esta acción no se puede deshacer.</small></p>
+                                            {% if vehiculo.ordenes_trabajo %}
+                                            <div class="alert alert-warning">
+                                                <i class="fas fa-exclamation-triangle"></i>
+                                                Este vehículo tiene {{ vehiculo.ordenes_trabajo|length }} orden(es) de trabajo asociada(s).
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                            <form action="{{ url_for('eliminar_vehiculo', vehiculo_id=vehiculo.vehiculo_id) }}" method="POST">
+                                                <button type="submit" class="btn btn-danger">Eliminar</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-4">
+            <i class="fas fa-truck fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">No hay vehículos registrados</h5>
+            <p class="text-muted">Comienza registrando el primer vehículo en el sistema.</p>
+            <a href="{{ url_for('registrar_vehiculo') }}" class="btn btn-primary">
+                <i class="fas fa-plus me-1"></i>Registrar Primer Vehículo
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

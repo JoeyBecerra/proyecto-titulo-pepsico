@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+
+{% block title %}Mis Notificaciones{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="fas fa-bell"></i> Mis Notificaciones</h1>
+        <div>
+            {% if notificaciones_no_leidas > 0 %}
+            <form method="POST" action="{{ url_for('marcar_todas_leidas') }}" class="d-inline me-2">
+                <button type="submit" class="btn btn-success">
+                    <i class="fas fa-check-double"></i> Marcar Todas como Leídas
+                </button>
+            </form>
+            {% endif %}
+            <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Volver al Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Estadísticas -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-white bg-primary">
+                <div class="card-body">
+                    <h4 class="card-title">{{ notificaciones|length }}</h4>
+                    <p class="card-text">Total Notificaciones</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-warning">
+                <div class="card-body">
+                    <h4 class="card-title" id="notificaciones-no-leidas-count">{{ notificaciones_no_leidas }}</h4>
+                    <p class="card-text">No Leídas</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            {% if notificaciones %}
+            <div class="list-group">
+                {% for notificacion in notificaciones %}
+                <div class="list-group-item list-group-item-action {% if not notificacion.leida %}list-group-item-light border-start border-3 border-{{ notificacion.tipo }}{% endif %}" 
+                     data-notificacion-id="{{ notificacion.notificacion_id }}">
+                    <div class="d-flex w-100 justify-content-between align-items-start">
+                        <div class="flex-grow-1 me-3">
+                            <div class="d-flex align-items-center mb-1">
+                                <span class="badge bg-{{ notificacion.tipo }} me-2">
+                                    {% if notificacion.tipo == 'info' %}ℹ️
+                                    {% elif notificacion.tipo == 'warning' %}⚠️
+                                    {% elif notificacion.tipo == 'success' %}✅
+                                    {% elif notificacion.tipo == 'danger' %}🚨
+                                    {% endif %}
+                                    {{ notificacion.tipo|upper }}
+                                </span>
+                                {% if not notificacion.leida %}
+                                <span class="badge bg-warning">NUEVO</span>
+                                {% endif %}
+                            </div>
+                            <p class="mb-1">{{ notificacion.mensaje }}</p>
+                            
+                            {% if notificacion.url %}
+                            <div class="mt-2">
+                                <a href="{{ notificacion.url }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-external-link-alt"></i> Ver detalles
+                                </a>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="text-end">
+                            <small class="text-muted d-block">
+                                {{ notificacion.fecha_creacion.strftime('%d/%m/%Y %H:%M') }}
+                            </small>
+                            <div class="btn-group btn-group-sm mt-1">
+                                {% if not notificacion.leida %}
+                                <button type="button" 
+                                        class="btn btn-outline-success btn-sm" 
+                                        onclick="marcarComoLeida('{{ notificacion.notificacion_id }}')"
+                                        title="Marcar como leída">
+                                    <i class="fas fa-check"></i>
+                                </button>
+                                {% endif %}
+                                <form method="POST" 
+                                      action="{{ url_for('eliminar_notificacion', notificacion_id=notificacion.notificacion_id) }}" 
+                                      class="d-inline">
+                                    <button type="submit" class="btn btn-outline-danger btn-sm" 
+                                            onclick="return confirm('¿Eliminar esta notificación?')"
+                                            title="Eliminar">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-4">
+                <i class="fas fa-bell-slash fa-3x text-muted mb-3"></i>
+                <h4>No tienes notificaciones</h4>
+                <p class="text-muted">Cuando tengas notificaciones nuevas, aparecerán aquí.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+// Función específica para la página de notificaciones
+function actualizarInterfazNotificaciones() {
+    // Recargar la página para mostrar cambios
+    setTimeout(() => {
+        window.location.reload();
+    }, 500);
+}
+
+// Sobrescribir la función global para esta página
+function marcarComoLeida(notificacionId) {
+    fetch(`/notificaciones/${notificacionId}/marcar-leida`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Actualizar contador global
+            actualizarContadorNotificaciones();
+            
+            // Mostrar feedback visual
+            const notificacionElement = document.querySelector(`[data-notificacion-id="${notificacionId}"]`);
+            if (notificacionElement) {
+                // Cambiar estilo visualmente
+                notificacionElement.classList.remove('list-group-item-light', 'border-start', 'border-3');
+                notificacionElement.classList.add('text-muted');
+                
+                // Remover el botón "Marcar como leída"
+                const botonMarcarLeida = notificacionElement.querySelector('button[onclick*="marcarComoLeida"]');
+                if (botonMarcarLeida) {
+                    botonMarcarLeida.remove();
+                }
+                
+                // Remover la etiqueta "NUEVO"
+                const badgeNuevo = notificacionElement.querySelector('.badge.bg-warning');
+                if (badgeNuevo) {
+                    badgeNuevo.remove();
+                }
+            }
+            
+            // Actualizar contador local
+            const countElement = document.getElementById('notificaciones-no-leidas-count');
+            if (countElement) {
+                const nuevoCount = parseInt(countElement.textContent) - 1;
+                countElement.textContent = Math.max(0, nuevoCount);
+            }
+            
+            // Mostrar mensaje de éxito
+            console.log('✅ Notificación marcada como leída');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al marcar la notificación como leída');
+    });
+}
+</script>
+{% endblock %}

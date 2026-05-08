@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Bloque de Agenda{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="card-title mb-0">
+                        <i class="fas fa-edit"></i> Editar Bloque de Agenda
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.fecha.label(class="form-label") }}
+                                {{ form.fecha(class="form-control") }}
+                                {% if form.fecha.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.fecha.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.hora_inicio.label(class="form-label") }}
+                                {{ form.hora_inicio(class="form-select") }}
+                                {% if form.hora_inicio.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.hora_inicio.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                {{ form.hora_fin.label(class="form-label") }}
+                                {{ form.hora_fin(class="form-select") }}
+                                {% if form.hora_fin.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.hora_fin.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.comentario.label(class="form-label") }}
+                            {{ form.comentario(class="form-control", rows="3", placeholder="Comentario opcional sobre este bloque de tiempo...") }}
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('ver_agenda') }}" class="btn btn-secondary me-md-2">
+                                <i class="fas fa-times"></i> Cancelar
+                            </a>
+                            {{ form.submit(class="btn btn-primary") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Información del bloque -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-info-circle"></i> Información del Bloque
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <strong>Estado:</strong>
+                            {% if bloque.disponible %}
+                                <span class="badge bg-success">Disponible</span>
+                            {% else %}
+                                <span class="badge bg-warning">Ocupado</span>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Creado por:</strong>
+                            {% if bloque.usuario %}
+                                {{ bloque.usuario.nombre }} {{ bloque.usuario.apellido }}
+                            {% else %}
+                                <span class="text-muted">N/A</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% if bloque.orden_trabajo %}
+                    <div class="row mt-2">
+                        <div class="col-12">
+                            <strong>OT Asignada:</strong>
+                            <a href="{{ url_for('ver_orden_trabajo', ot_id=bloque.orden_trabajo.ot_id) }}" 
+                               class="badge bg-primary text-decoration-none">
+                                {{ bloque.orden_trabajo.numero_ot }} - {{ bloque.orden_trabajo.vehiculo.patente }}
+                            </a>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

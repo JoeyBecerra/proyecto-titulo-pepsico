@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block title %}Error del Servidor - PepsiCo Taller{% endblock %}
+
+{% block content %}
+<div class="container-fluid text-center py-5">
+    <div class="row">
+        <div class="col-md-12">
+            <h1 class="display-1 text-muted">500</h1>
+            <h2 class="text-muted">Error Interno del Servidor</h2>
+            <p class="lead">Algo salió mal en nuestro servidor.</p>
+            <p>Nuestro equipo ha sido notificado y está trabajando para solucionarlo.</p>
+            <div class="mt-4">
+                <a href="{{ url_for('dashboard') }}" class="btn btn-primary me-2">
+                    <i class="fas fa-arrow-left me-2"></i>Volver al Dashboard
+                </a>
+                <a href="{{ url_for('login') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-sign-in-alt me-2"></i>Ir al Login
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
